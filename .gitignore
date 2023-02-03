@@ -39,5 +39,7 @@ coverage.xml
 *.pot
 # Sphinx documentation
 docs/_build/
-#idea
+# idea
 .idea/
+# book folders
+book/
