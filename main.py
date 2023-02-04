@@ -1,26 +1,13 @@
 import os
+from urllib.parse import unquote, urlparse
 
-from bs4 import BeautifulSoup
-from pathvalidate import sanitize_filename
 import requests
+from requests.exceptions import HTTPError
+
+from books import parse_book_by_id
 
 
-class RedirectError(requests.exceptions.HTTPError):
-    pass
-
-
-def parse_book_title(response: requests.Response) -> str:
-    soup = BeautifulSoup(response.text, 'lxml')
-    title = soup.find('h1').text.split('::')[0].strip()
-    return sanitize_filename(title)
-
-
-def check_for_redirect(response: requests.Response) -> None:
-    if len(response.history):
-        raise RedirectError
-
-
-def download_txt(url: str, filename: str, folder: str = 'books') -> str:
+def download_txt(url: str, filename: str, folder: str) -> str:
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
@@ -30,35 +17,63 @@ def download_txt(url: str, filename: str, folder: str = 'books') -> str:
         str: Путь до файла, куда сохранён текст.
     """
     response = requests.get(url)
-    check_for_redirect(response)
     response.raise_for_status()
 
-    filepath = os.path.join(folder, f'{filename}.txt')
+    filepath = os.path.join(folder, f'{filename}')
     with open(filepath, 'w', encoding='utf-8') as file:
         file.write(response.text)
     return filepath
 
 
-def main():
-    folder = 'books'
-    os.makedirs(folder, exist_ok=True)
-    for id in range(1, 11):  # пробуем скачать книги с 1 по 10
-        response = requests.get(f'https://tululu.org/b{id}/')
-        try:
-            check_for_redirect(response)
-        except RedirectError:
-            continue
-        book_title = parse_book_title(response)
+def download_img(url: str, filename: str, folder: str) -> str:
+    """Функция для скачивания текстовых файлов.
+    Args:
+        url (str): Cсылка на текст, который хочется скачать.
+        filename (str): Имя файла, с которым сохранять.
+        folder (str): Папка, куда сохранять.
+    Returns:
+        str: Путь до файла, куда сохранён текст.
+    """
+    response = requests.get(url)
+    response.raise_for_status()
 
+    filepath = os.path.join(folder, f'{filename}')
+    with open(filepath, 'wb') as file:
+        file.write(response.content)
+    return filepath
+
+
+def get_image_file_name(img_url: str) -> str:
+    parsed_link = unquote(urlparse(img_url).path)
+    return os.path.split(parsed_link)[-1]
+
+
+def main():
+    folders = {
+        'books': 'books',
+        'images': 'images'
+    }
+    for folder in folders:
+        os.makedirs(folder, exist_ok=True)
+
+    for book_id in range(1, 11):  # пробуем скачать книги с 1 по 10
         try:
-            filepath = download_txt(
-                url=f'https://tululu.org/txt.php?id={id}',
-                filename=f'{id:02.0f}. {book_title}',
-                folder=folder
-            )
-            print(filepath)
-        except RedirectError:
+            book = parse_book_by_id(book_id)
+        except HTTPError:
             continue
+
+        txt_file = download_txt(
+            url=book.txt_url,
+            filename=f'{book_id:02.0f}. {book.sanitized_title}.txt',
+            folder=folders['books']
+        )
+
+        img_file = download_img(
+            url=book.img_url,
+            filename=get_image_file_name(book.img_url),
+            folder=folders['images']
+        )
+        print(txt_file, img_file)
 
 
 if __name__ == '__main__':
