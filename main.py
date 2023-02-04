@@ -55,7 +55,7 @@ def get_parameters() -> Namespace:
 
 def main():
     parameters = get_parameters()
-    
+
     folders = {
         'books': 'books',
         'images': 'images'

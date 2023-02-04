@@ -9,8 +9,6 @@ def download_txt(url: str, filename: str, folder: str):
         url (str): Cсылка на текст, который хочется скачать.
         filename (str): Имя файла, с которым сохранять.
         folder (str): Папка, куда сохранять.
-    Returns:
-        str: Путь до файла, куда сохранён текст.
     """
     response = requests.get(url)
     response.raise_for_status()
@@ -26,8 +24,6 @@ def download_img(url: str, filename: str, folder: str):
         url (str): Cсылка на файл, который хочется скачать.
         filename (str): Имя файла, с которым сохранять.
         folder (str): Папка, куда сохранять.
-    Returns:
-        str: Путь до файла, куда сохранено изображение.
     """
     response = requests.get(url)
     response.raise_for_status()

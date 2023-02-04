@@ -7,6 +7,7 @@ from pathvalidate import sanitize_filename
 
 
 class Book(NamedTuple):
+    """Класс книги"""
     sanitized_title: str
     img_url: str
     txt_url: str
@@ -31,7 +32,7 @@ def get_txt_url(soup: BeautifulSoup) -> str:
 
 
 def parse_book_page(html: str) -> Book:
-    """Функция для парсинга страницы книги.
+    """Функция для парсинга страницы сайта с описание книги.
     Args:
         html (str): HTML код страницы.
     Returns:
