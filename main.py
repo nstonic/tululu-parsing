@@ -2,10 +2,11 @@ import os
 from urllib.parse import unquote, urlparse
 
 import requests
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from requests.exceptions import HTTPError
 
 from books import parse_book_page
+from download import download_txt, download_img
 
 
 def check_response(response: requests.Response):
@@ -20,40 +21,6 @@ def check_response(response: requests.Response):
         raise requests.exceptions.HTTPError
 
 
-def download_txt(url: str, filename: str, folder: str):
-    """Функция для скачивания текстовых файлов.
-    Args:
-        url (str): Cсылка на текст, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
-    Returns:
-        str: Путь до файла, куда сохранён текст.
-    """
-    response = requests.get(url)
-    response.raise_for_status()
-
-    filepath = os.path.join(folder, f'{filename}')
-    with open(filepath, 'w', encoding='utf-8') as file:
-        file.write(response.text)
-
-
-def download_img(url: str, filename: str, folder: str):
-    """Функция для скачивания бинарных файлов.
-    Args:
-        url (str): Cсылка на файл, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
-    Returns:
-        str: Путь до файла, куда сохранено изображение.
-    """
-    response = requests.get(url)
-    response.raise_for_status()
-
-    filepath = os.path.join(folder, f'{filename}')
-    with open(filepath, 'wb') as file:
-        file.write(response.content)
-
-
 def get_image_file_name(url: str) -> str:
     """Функция для получения имени файла из ссылки.
     Args:
@@ -65,7 +32,11 @@ def get_image_file_name(url: str) -> str:
     return os.path.split(parsed_link)[-1]
 
 
-def main():
+def get_parameters() -> Namespace:
+    """Функция для получения параметров запуска скрипта.
+    Returns:
+        Namespace: Объект параметров argparse.
+    """
     parser = ArgumentParser()
     parser.add_argument(
         '--start_id',
@@ -79,8 +50,12 @@ def main():
         default=10,
         help='End book id'
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def main():
+    parameters = get_parameters()
+    
     folders = {
         'books': 'books',
         'images': 'images'
@@ -88,7 +63,7 @@ def main():
     for folder in folders.values():
         os.makedirs(folder, exist_ok=True)
 
-    for book_id in range(args.start_id, args.end_id + 1):
+    for book_id in range(parameters.start_id, parameters.end_id + 1):
 
         response = requests.get(f'https://tululu.org/b{book_id}/')
         try:
