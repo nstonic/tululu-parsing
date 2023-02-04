@@ -10,7 +10,7 @@ class Book(NamedTuple):
     sanitized_title: str
     img_url: str
     txt_url: str
-    # genre: str
+    genres: list[str]
     comments: list[str]
 
 
@@ -20,7 +20,7 @@ def check_book(response: requests.Response):
         raise requests.exceptions.HTTPError
 
 
-def get_txt_url(soup):
+def get_txt_url(soup: BeautifulSoup) -> str:
     if txt_link := soup.find('a', string='скачать txt'):
         return txt_link['href']
     else:
@@ -45,13 +45,18 @@ def parse_book_by_id(book_id: int):
         soup.find('div', class_='bookimage').find('img')['src']
     )
     comments = [
-        f'{comment.find("span", class_="black").text}\n\n'
+        comment.find('span', class_='black').text
         for comment in soup.find_all('div', class_='texts')
+    ]
+    genres = [
+        genre.text
+        for genre in soup.find('span', class_='d_book').find_all('a')
     ]
 
     return Book(
         sanitized_title=sanitize_filename(title),
         img_url=full_img_url,
         txt_url=full_txt_url,
-        comments=comments
+        comments=comments,
+        genres=genres
     )

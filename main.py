@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 from urllib.parse import unquote, urlparse
 
 import requests
@@ -48,13 +49,6 @@ def get_image_file_name(img_url: str) -> str:
     return os.path.split(parsed_link)[-1]
 
 
-def save_comments(comments: list[str], filename: str, folder: str) -> str:
-    filepath = os.path.join(folder, f'{filename}')
-    with open(filepath, 'w') as file:
-        file.writelines(comments)
-    return filepath
-
-
 def main():
     folders = {
         'books': 'books',
@@ -64,28 +58,28 @@ def main():
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
 
-    for book_id in range(1, 11):  # пробуем скачать книги с 1 по 10
+    for book_id in range(1, 101):  # пробуем скачать книги с 1 по 10
         try:
             book = parse_book_by_id(book_id)
         except HTTPError:
             continue
 
-        txt_file = download_txt(
+        download_txt(
             url=book.txt_url,
             filename=f'{book_id:02.0f}. {book.sanitized_title}.txt',
             folder=folders['books']
         )
-        save_comments(
-            comments=book.comments,
-            filename=f'{book_id:02.0f}. comments.txt',
-            folder=folders['comments']
-        )
+
         download_img(
             url=book.img_url,
             filename=get_image_file_name(book.img_url),
             folder=folders['images']
         )
-        print(txt_file)
+        print(f'Заголовок: {book.sanitized_title}')
+        print(book.genres)
+        # for comment in book.comments:
+        #     print(comment)
+        # print()
 
 
 if __name__ == '__main__':
