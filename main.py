@@ -1,7 +1,7 @@
 import os
-from pprint import pprint
 from urllib.parse import unquote, urlparse
 
+from argparse import ArgumentParser
 import requests
 from requests.exceptions import HTTPError
 
@@ -50,15 +50,29 @@ def get_image_file_name(img_url: str) -> str:
 
 
 def main():
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--start_id',
+        type=int,
+        default=1,
+        help='Start book id'
+    )
+    parser.add_argument(
+        '--end_id',
+        type=int,
+        default=10,
+        help='End book id'
+    )
+    args = parser.parse_args()
+
     folders = {
         'books': 'books',
-        'images': 'images',
-        'comments': 'comments'
+        'images': 'images'
     }
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
 
-    for book_id in range(1, 101):  # пробуем скачать книги с 1 по 10
+    for book_id in range(args.start_id, args.end_id+1):
         try:
             book = get_book_by_id(book_id)
         except HTTPError:
@@ -75,8 +89,9 @@ def main():
             filename=get_image_file_name(book.img_url),
             folder=folders['images']
         )
-        print(f'Заголовок: {book.sanitized_title}')
-        print(book.genres)
+        print(f'Название: {book.sanitized_title}')
+        print(f'Автор: {book.author}')
+        print(f'Жанры: {book.genres}\n')
         # for comment in book.comments:
         #     print(comment)
         # print()
