@@ -15,26 +15,31 @@ class Book(NamedTuple):
     author: str
 
 
-def check_book(response: requests.Response):
-    response.raise_for_status()
-    if len(response.history):
-        raise requests.exceptions.HTTPError
-
-
 def get_txt_url(soup: BeautifulSoup) -> str:
+    """Функция для проверки наличия и получения ссылки на текстовый файл.
+    Args:
+        soup (BeautifulSoup): Объект класса BeautifulSoup.
+    Returns:
+        str: Ссылка на скачивание текстового файла.
+    Raises:
+        HTTPError: Если ссылки в документе нет
+    """
     if txt_link := soup.find('a', string='скачать txt'):
         return txt_link['href']
     else:
         raise requests.exceptions.HTTPError
 
 
-def get_book_by_id(book_id: int) -> Book:
+def parse_book_page(html: str) -> Book:
+    """Функция для парсинга страницы книги.
+    Args:
+        html (str): HTML код страницы.
+    Returns:
+        Book: Объект книги.
+    """
     base_url = 'https://tululu.org/'
 
-    response = requests.get(urljoin(base_url, f'b{book_id}/'))
-    check_book(response)
-
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = BeautifulSoup(html, 'lxml')
 
     title, author = soup.find('h1').text.split('::')
     full_txt_url = urljoin(
