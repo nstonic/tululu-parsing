@@ -5,7 +5,7 @@ from urllib.parse import unquote, urlparse
 import requests
 from requests.exceptions import HTTPError
 
-from books import parse_book_by_id
+from books import get_book_by_id
 
 
 def download_txt(url: str, filename: str, folder: str) -> str:
@@ -60,7 +60,7 @@ def main():
 
     for book_id in range(1, 101):  # пробуем скачать книги с 1 по 10
         try:
-            book = parse_book_by_id(book_id)
+            book = get_book_by_id(book_id)
         except HTTPError:
             continue
 

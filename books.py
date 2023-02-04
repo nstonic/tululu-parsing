@@ -12,6 +12,7 @@ class Book(NamedTuple):
     txt_url: str
     genres: list[str]
     comments: list[str]
+    author: str
 
 
 def check_book(response: requests.Response):
@@ -27,7 +28,7 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise requests.exceptions.HTTPError
 
 
-def parse_book_by_id(book_id: int):
+def get_book_by_id(book_id: int) -> Book:
     base_url = 'https://tululu.org/'
 
     response = requests.get(urljoin(base_url, f'b{book_id}/'))
@@ -35,7 +36,7 @@ def parse_book_by_id(book_id: int):
 
     soup = BeautifulSoup(response.text, 'lxml')
 
-    title = soup.find('h1').text.split('::')[0].strip()
+    title, author = soup.find('h1').text.split('::')
     full_txt_url = urljoin(
         base_url,
         get_txt_url(soup)
@@ -54,9 +55,10 @@ def parse_book_by_id(book_id: int):
     ]
 
     return Book(
-        sanitized_title=sanitize_filename(title),
+        sanitized_title=sanitize_filename(title.strip()),
         img_url=full_img_url,
         txt_url=full_txt_url,
         comments=comments,
-        genres=genres
+        genres=genres,
+        author=author.strip()
     )
