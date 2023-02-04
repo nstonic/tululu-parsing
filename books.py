@@ -11,7 +11,7 @@ class Book(NamedTuple):
     img_url: str
     txt_url: str
     # genre: str
-    # comments: list[str]
+    comments: list[str]
 
 
 def check_book(response: requests.Response):
@@ -35,20 +35,23 @@ def parse_book_by_id(book_id: int):
 
     soup = BeautifulSoup(response.text, 'lxml')
 
+    title = soup.find('h1').text.split('::')[0].strip()
     full_txt_url = urljoin(
         base_url,
         get_txt_url(soup)
     )
-
     full_img_url = urljoin(
         base_url,
         soup.find('div', class_='bookimage').find('img')['src']
     )
-
-    title = soup.find('h1').text.split('::')[0].strip()
+    comments = [
+        f'{comment.find("span", class_="black").text}\n\n'
+        for comment in soup.find_all('div', class_='texts')
+    ]
 
     return Book(
         sanitized_title=sanitize_filename(title),
         img_url=full_img_url,
-        txt_url=full_txt_url
+        txt_url=full_txt_url,
+        comments=comments
     )

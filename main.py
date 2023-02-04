@@ -26,7 +26,7 @@ def download_txt(url: str, filename: str, folder: str) -> str:
 
 
 def download_img(url: str, filename: str, folder: str) -> str:
-    """Функция для скачивания текстовых файлов.
+    """Функция для скачивания бинарных файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
         filename (str): Имя файла, с которым сохранять.
@@ -48,10 +48,18 @@ def get_image_file_name(img_url: str) -> str:
     return os.path.split(parsed_link)[-1]
 
 
+def save_comments(comments: list[str], filename: str, folder: str) -> str:
+    filepath = os.path.join(folder, f'{filename}')
+    with open(filepath, 'w') as file:
+        file.writelines(comments)
+    return filepath
+
+
 def main():
     folders = {
         'books': 'books',
-        'images': 'images'
+        'images': 'images',
+        'comments': 'comments'
     }
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
@@ -67,13 +75,17 @@ def main():
             filename=f'{book_id:02.0f}. {book.sanitized_title}.txt',
             folder=folders['books']
         )
-
-        img_file = download_img(
+        save_comments(
+            comments=book.comments,
+            filename=f'{book_id:02.0f}. comments.txt',
+            folder=folders['comments']
+        )
+        download_img(
             url=book.img_url,
             filename=get_image_file_name(book.img_url),
             folder=folders['images']
         )
-        print(txt_file, img_file)
+        print(txt_file)
 
 
 if __name__ == '__main__':
