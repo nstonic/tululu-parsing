@@ -1,10 +1,10 @@
 import logging
 import sys
 import time
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
-from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
+import requests.exceptions as reqex
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
@@ -20,7 +20,7 @@ def check_response(response: requests.Response):
         HTTPError: Если в отклике были редиректы
     """
     response.raise_for_status()
-    if len(response.history):
+    if response.history:
         raise requests.exceptions.HTTPError('Страница не найдена.')
 
 
@@ -39,16 +39,17 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(html: str, book_id: int) -> Book:
-    """Функция для парсинга страницы сайта с описание книги.
+def parse_book_page(response: requests.Response, book_id: int) -> Book:
+    """Функция для парсинга страницы с описанием книги.
     Args:
-        html (str): HTML код страницы.
+        book_id: Id книги
+        response (str): HTML код страницы.
     Returns:
         Book: Объект книги.
     """
-    base_url = 'https://tululu.org/'
+    base_url = urlparse(response.url)._replace(path='').geturl()
 
-    soup = BeautifulSoup(html, 'lxml')
+    soup = BeautifulSoup(response.text, 'lxml')
 
     title, author = soup.find('h1').text.split('::')
     full_txt_url = urljoin(
@@ -89,19 +90,20 @@ def get_book_by_id(book_id: int) -> Book | None:
     url = f'https://tululu.org/b{book_id}/'
     delay = 0
     while True:
-        delay = min(delay, 30)  # ограничим время задержи 30 секундами
+        delay = min(delay, 30)
         try:
             response = requests.get(url)
             check_response(response)
-            book = parse_book_page(response.text, book_id)
+            book = parse_book_page(response, book_id)
             download_book(book)
-            return book
-        except (ChunkedEncodingError, ConnectionError):
+        except (reqex.ChunkedEncodingError, reqex.ConnectionError):
             time.sleep(delay)
             delay += 5
             continue
-        except HTTPError as ex:
+        except reqex.HTTPError as ex:
             msg = f'Книга по ссылке {url} недоступна. Причина: {ex}'
             logging.warning(msg)
             print(f'\n{msg}', file=sys.stderr)
             return
+        else:
+            return book
