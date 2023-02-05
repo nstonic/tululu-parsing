@@ -40,10 +40,10 @@ def main():
 
     for book_id in range(parameters.start_id, parameters.end_id + 1):
         if book := get_book_by_id(book_id):
-            print(f'\nНазвание: {book.sanitized_title}')
-            print(f'Автор: {book.author}')
-            print(f'Жанры: {book.genres}')
-            print('Комментарии: ')
+            print(f'\nНазвание: {book.sanitized_title}\n'
+                  f'Автор: {book.author}\n'
+                  f'Жанры: {book.genres}\n'
+                  'Комментарии: ')
             for comment in book.comments:
                 print(comment)
 
