@@ -1,19 +1,38 @@
+import logging
+import sys
+import time
 from typing import NamedTuple
 from urllib.parse import urljoin
 
 import requests
+from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
+
+from download import download_book
 
 
 class Book(NamedTuple):
     """Класс книги"""
+    id: int
     sanitized_title: str
     img_url: str
     txt_url: str
     genres: list[str]
     comments: list[str]
     author: str
+
+
+def check_response(response: requests.Response):
+    """Функция для проверки отклика на ошибки.
+    Args:
+        response (Response): Объект отклика сервера.
+    Raises:
+        HTTPError: Если в отклике были редиректы
+    """
+    response.raise_for_status()
+    if len(response.history):
+        raise requests.exceptions.HTTPError('Страница не найдена.')
 
 
 def get_txt_url(soup: BeautifulSoup) -> str:
@@ -31,7 +50,7 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(html: str) -> Book:
+def parse_book_page(html: str, book_id: int) -> Book:
     """Функция для парсинга страницы сайта с описание книги.
     Args:
         html (str): HTML код страницы.
@@ -61,6 +80,7 @@ def parse_book_page(html: str) -> Book:
     ]
 
     return Book(
+        id=book_id,
         sanitized_title=sanitize_filename(title.strip()),
         img_url=full_img_url,
         txt_url=full_txt_url,
@@ -68,3 +88,31 @@ def parse_book_page(html: str) -> Book:
         genres=genres,
         author=author.strip()
     )
+
+
+def get_book_by_id(book_id: int) -> Book | None:
+    """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
+    Args:
+        book_id (str): Id книги.
+    Returns:
+        Namespace: Объект класса Book.
+    """
+    url = f'https://tululu.org/b{book_id}/'
+    delay = 0
+    while True:
+        delay = min(delay, 30)  # ограничим время задержи 30 секундами
+        try:
+            response = requests.get(url)
+            check_response(response)
+            book = parse_book_page(response.text, book_id)
+            download_book(book)
+            return book
+        except (ChunkedEncodingError, ConnectionError):
+            time.sleep(delay)
+            delay += 5
+            continue
+        except HTTPError as ex:
+            msg = f'Книга по ссылке {url} недоступна. Причина: {ex}'
+            logging.warning(msg)
+            print(f'\n{msg}', file=sys.stderr)
+            return
