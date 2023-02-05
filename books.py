@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 from datetime import datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import requests
 import requests.exceptions as req_ex
@@ -97,11 +97,14 @@ def get_book_by_id(book_id: int) -> Book | None:
             book = parse_book_page(response, book_id)
             download_book(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
+            # Проверка на разрыв соединения
             logging.warning(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
             time.sleep(delay)
             delay += 5
             continue
         except req_ex.HTTPError as ex:
+            #  Помимо стандартных случаев, исключение также возбуждается в случае обнаружения редиректа,
+            #  либо при отсутствии ссылки на txt файл
             msg = f'Книга по ссылке {url} недоступна. Причина: {ex}'
             logging.warning(msg)
             print(f'\n{msg}', file=sys.stderr)
