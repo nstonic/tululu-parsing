@@ -1,5 +1,7 @@
+import logging
 import os
 import sys
+from datetime import datetime
 from urllib.parse import unquote, urlparse
 
 import requests
@@ -56,6 +58,10 @@ def get_parameters() -> Namespace:
 
 def main():
     parameters = get_parameters()
+    logging.basicConfig(
+        filename=f'books {datetime.now().strftime("%Y-%m-%d %H.%M")}.log',
+        level=logging.WARNING
+    )
 
     os.makedirs('books', exist_ok=True)
     os.makedirs('images', exist_ok=True)
@@ -67,7 +73,9 @@ def main():
             check_response(response)
             book = parse_book_page(response.text)
         except HTTPError as ex:
-            print(f'\nКнига по ссылке https://tululu.org/b{book_id} недоступна.\n{ex}', file=sys.stderr)
+            msg = f'Книга по ссылке {url} недоступна. Причина: {ex}'
+            logging.warning(msg)
+            print(f'\n{msg}', file=sys.stderr)
             continue
 
         download_txt(
