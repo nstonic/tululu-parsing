@@ -28,7 +28,7 @@ def get_txt_url(soup: BeautifulSoup) -> str:
     if txt_link := soup.find('a', string='скачать txt'):
         return txt_link['href']
     else:
-        raise requests.exceptions.HTTPError
+        raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
 
 
 def parse_book_page(html: str) -> Book:

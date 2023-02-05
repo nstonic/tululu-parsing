@@ -1,4 +1,5 @@
 import os
+import sys
 from urllib.parse import unquote, urlparse
 
 import requests
@@ -18,7 +19,7 @@ def check_response(response: requests.Response):
     """
     response.raise_for_status()
     if len(response.history):
-        raise requests.exceptions.HTTPError
+        raise requests.exceptions.HTTPError('Страница не найдена.')
 
 
 def get_image_file_name(url: str) -> str:
@@ -56,32 +57,29 @@ def get_parameters() -> Namespace:
 def main():
     parameters = get_parameters()
 
-    folders = {
-        'books': 'books',
-        'images': 'images'
-    }
-    for folder in folders.values():
-        os.makedirs(folder, exist_ok=True)
+    os.makedirs('books', exist_ok=True)
+    os.makedirs('images', exist_ok=True)
 
     for book_id in range(parameters.start_id, parameters.end_id + 1):
-
-        response = requests.get(f'https://tululu.org/b{book_id}/')
+        url = f'https://tululu.org/b{book_id}/'
+        response = requests.get(url)
         try:
             check_response(response)
             book = parse_book_page(response.text)
-        except HTTPError:
+        except HTTPError as ex:
+            print(f'\nКнига по ссылке https://tululu.org/b{book_id} недоступна.\n{ex}', file=sys.stderr)
             continue
 
         download_txt(
             url=book.txt_url,
             filename=f'{book_id:02.0f}. {book.sanitized_title}.txt',
-            folder=folders['books']
+            folder='books'
         )
 
         download_img(
             url=book.img_url,
             filename=get_image_file_name(book.img_url),
-            folder=folders['images']
+            folder='images'
         )
         print(f'\nНазвание: {book.sanitized_title}')
         print(f'Автор: {book.author}')
