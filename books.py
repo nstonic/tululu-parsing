@@ -1,6 +1,7 @@
 import logging
 import sys
 import time
+from datetime import datetime
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -95,7 +96,8 @@ def get_book_by_id(book_id: int) -> Book | None:
             check_response(response)
             book = parse_book_page(response, book_id)
             download_book(book)
-        except (req_ex.ChunkedEncodingError, req_ex.ConnectionError):
+        except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
+            logging.warning(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
             time.sleep(delay)
             delay += 5
             continue
