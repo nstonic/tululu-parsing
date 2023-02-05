@@ -3,7 +3,7 @@ from urllib.parse import unquote, urlparse
 
 import requests
 
-from books import Book
+from classes import Book
 
 
 def get_image_file_name(url: str) -> str:

@@ -1,7 +1,6 @@
 import logging
 import sys
 import time
-from typing import NamedTuple
 from urllib.parse import urljoin
 
 import requests
@@ -9,18 +8,8 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, HTTPError
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
+from classes import Book
 from download import download_book
-
-
-class Book(NamedTuple):
-    """Класс книги"""
-    id: int
-    sanitized_title: str
-    img_url: str
-    txt_url: str
-    genres: list[str]
-    comments: list[str]
-    author: str
 
 
 def check_response(response: requests.Response):
