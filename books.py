@@ -84,7 +84,7 @@ def get_book_by_id(book_id: int) -> Book | None:
     Args:
         book_id (str): Id книги.
     Returns:
-        Namespace: Объект класса Book.
+        book: Объект класса Book.
     """
     url = f'https://tululu.org/b{book_id}/'
     delay = 0
