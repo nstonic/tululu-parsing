@@ -39,25 +39,6 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def join_url(base_url: str, short_url: str) -> str:
-    """Функция для получения полной ссылки на файл.
-    Args:
-        short_url: короткая ссылка
-        base_url: базовый url
-    Returns:
-        str: Ссылка на скачивание файла.
-    """
-    if short_url.startswith('http'):
-        return short_url
-    elif short_url.startswith('/'):
-        return urljoin(
-            urlparse(base_url)._replace(path='').geturl(),
-            short_url
-        )
-    else:
-        return urljoin(base_url, short_url)
-
-
 def parse_book_page(response: requests.Response, book_id: int) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
@@ -70,13 +51,13 @@ def parse_book_page(response: requests.Response, book_id: int) -> Book:
     soup = BeautifulSoup(response.text, 'lxml')
 
     title, author = soup.find('h1').text.split('::')
-    full_txt_url = join_url(
-        base_url=response.url,
-        short_url=get_txt_url(soup)
+    full_txt_url = urljoin(
+        response.url,
+        get_txt_url(soup)
     )
-    full_img_url = join_url(
-        base_url=response.url,
-        short_url=soup.find('div', class_='bookimage').find('img')['src']
+    full_img_url = urljoin(
+        response.url,
+        soup.find('div', class_='bookimage').find('img')['src']
     )
     comments = [
         comment.find('span', class_='black').text
