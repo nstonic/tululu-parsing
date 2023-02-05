@@ -4,7 +4,7 @@ import time
 from urllib.parse import urljoin, urlparse
 
 import requests
-import requests.exceptions as reqex
+import requests.exceptions as req_ex
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
@@ -25,7 +25,7 @@ def check_response(response: requests.Response):
 
 
 def get_txt_url(soup: BeautifulSoup) -> str:
-    """Функция для проверки наличия и получения ссылки на текстовый файл.
+    """Функция для проверки наличия и получения короткой ссылки на текстовый файл.
     Args:
         soup (BeautifulSoup): Объект класса BeautifulSoup.
     Returns:
@@ -39,6 +39,25 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
 
 
+def join_url(base_url: str, short_url: str) -> str:
+    """Функция для получения полной ссылки на файл.
+    Args:
+        short_url: короткая ссылка
+        base_url: базовый url
+    Returns:
+        str: Ссылка на скачивание файла.
+    """
+    if short_url.startswith('http'):
+        return short_url
+    elif short_url.startswith('/'):
+        return urljoin(
+            urlparse(base_url)._replace(path='').geturl(),
+            short_url
+        )
+    else:
+        return urljoin(base_url, short_url)
+
+
 def parse_book_page(response: requests.Response, book_id: int) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
@@ -47,18 +66,17 @@ def parse_book_page(response: requests.Response, book_id: int) -> Book:
     Returns:
         Book: Объект книги.
     """
-    base_url = urlparse(response.url)._replace(path='').geturl()
 
     soup = BeautifulSoup(response.text, 'lxml')
 
     title, author = soup.find('h1').text.split('::')
-    full_txt_url = urljoin(
-        base_url,
-        get_txt_url(soup)
+    full_txt_url = join_url(
+        base_url=response.url,
+        short_url=get_txt_url(soup)
     )
-    full_img_url = urljoin(
-        base_url,
-        soup.find('div', class_='bookimage').find('img')['src']
+    full_img_url = join_url(
+        base_url=response.url,
+        short_url=soup.find('div', class_='bookimage').find('img')['src']
     )
     comments = [
         comment.find('span', class_='black').text
@@ -96,11 +114,11 @@ def get_book_by_id(book_id: int) -> Book | None:
             check_response(response)
             book = parse_book_page(response, book_id)
             download_book(book)
-        except (reqex.ChunkedEncodingError, reqex.ConnectionError):
+        except (req_ex.ChunkedEncodingError, req_ex.ConnectionError):
             time.sleep(delay)
             delay += 5
             continue
-        except reqex.HTTPError as ex:
+        except req_ex.HTTPError as ex:
             msg = f'Книга по ссылке {url} недоступна. Причина: {ex}'
             logging.warning(msg)
             print(f'\n{msg}', file=sys.stderr)
