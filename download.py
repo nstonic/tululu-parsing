@@ -2,8 +2,19 @@ import os
 from urllib.parse import unquote, urlparse
 
 import requests
+import requests.exceptions as req_ex
 
-from classes import Book
+
+def check_response(response: requests.Response):
+    """Функция для проверки отклика на ошибки.
+    Args:
+        response (Response): Объект отклика сервера.
+    Raises:
+        HTTPError: Если в отклике были редиректы
+    """
+    response.raise_for_status()
+    if response.history:
+        raise req_ex.HTTPError('Страница не найдена.')
 
 
 def get_image_file_name(url: str) -> str:
@@ -25,7 +36,7 @@ def download_txt(url: str, filename: str, folder: str):
         folder (str): Папка, куда сохранять.
     """
     response = requests.get(url)
-    response.raise_for_status()
+    check_response(response)
 
     filepath = os.path.join(folder, f'{filename}')
     with open(filepath, 'w', encoding='utf-8') as file:
@@ -40,21 +51,8 @@ def download_img(url: str, filename: str, folder: str):
         folder (str): Папка, куда сохранять.
     """
     response = requests.get(url)
-    response.raise_for_status()
+    check_response(response)
 
     filepath = os.path.join(folder, f'{filename}')
     with open(filepath, 'wb') as file:
         file.write(response.content)
-
-
-def download_book(book: Book):
-    download_txt(
-        url=book.txt_url,
-        filename=f'{book.id:02.0f}. {book.sanitized_title}.txt',
-        folder='books'
-    )
-    download_img(
-        url=book.img_url,
-        filename=get_image_file_name(book.img_url),
-        folder='images'
-    )

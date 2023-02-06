@@ -7,22 +7,10 @@ from urllib.parse import urljoin
 import requests
 import requests.exceptions as req_ex
 from bs4 import BeautifulSoup
-from pathvalidate import sanitize_filename
+from pathvalidate import sanitize_filename as sf
 
 from classes import Book
-from download import download_book
-
-
-def check_response(response: requests.Response):
-    """Функция для проверки отклика на ошибки.
-    Args:
-        response (Response): Объект отклика сервера.
-    Raises:
-        HTTPError: Если в отклике были редиректы
-    """
-    response.raise_for_status()
-    if response.history:
-        raise requests.exceptions.HTTPError('Страница не найдена.')
+import download as dl
 
 
 def get_txt_url(soup: BeautifulSoup) -> str:
@@ -71,7 +59,7 @@ def parse_book_page(response: requests.Response, book_id: int) -> Book:
 
     return Book(
         id=book_id,
-        sanitized_title=sanitize_filename(title.strip()),
+        sanitized_title=sf(title.strip()),
         img_url=full_img_url,
         txt_url=full_txt_url,
         comments=comments,
@@ -93,9 +81,18 @@ def get_book_by_id(book_id: int) -> Book | None:
         delay = min(delay, 30)
         try:
             response = requests.get(url)
-            check_response(response)
+            dl.check_response(response)
             book = parse_book_page(response, book_id)
-            download_book(book)
+            dl.download_txt(
+                url=book.txt_url,
+                filename=f'{book.id:02.0f}. {book.sanitized_title}.txt',
+                folder='books'
+            )
+            dl.download_img(
+                url=book.img_url,
+                filename=dl.get_image_file_name(book.img_url),
+                folder='images'
+            )
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
             logging.warning(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
