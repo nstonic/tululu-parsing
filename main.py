@@ -52,7 +52,7 @@ def get_arguments() -> argparse.Namespace:
         '--dest_folder',
         default='downladed_books',
         type=validate_filepath_arg,
-        help='Путь к каталогу с результатами парсинга: картинкам, книгам, JSON'
+        help='Путь к каталогу с результатами парсинга: картинкам, книгам, JSON и логами'
     )
     parser.add_argument(
         '--json_path',
@@ -88,7 +88,8 @@ def main():
     )
     books = []
     for book_url in books_urls:
-        if book := get_book(book_url, args, pathes):
+        if book := get_book(book_url, pathes,
+                            skip_txt=args.skip_txt, skip_imgs=args.skip_imgs):
             print(book_url)
             books.append(book.to_dict())
     with open(pathes['json'], 'w') as file:

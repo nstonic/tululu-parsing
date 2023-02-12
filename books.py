@@ -40,7 +40,7 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise req_ex.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(response: requests.Response, args: Namespace, pathes: dict) -> Book:
+def parse_book_page(response: requests.Response, pathes: dict) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
         args: Аргументы запуска скрипта
@@ -71,20 +71,17 @@ def parse_book_page(response: requests.Response, args: Namespace, pathes: dict) 
         genre.text
         for genre in soup.select('span.d_book a')
     ]
-    if not args.skip_txt:
-        book_path = os.path.join(
-            pathes['books'],
-            f'{book_id} {sanitized_title}.txt'
-        )
-    else:
-        book_path=None
-    if not args.skip_imgs:
-        image_path = os.path.join(
-            pathes['images'],
-            get_image_file_name(full_img_url)
-        )
-    else:
-        image_path = None
+
+    book_path = os.path.join(
+        pathes['books'],
+        f'{book_id} {sanitized_title}.txt'
+    ) if pathes.get('books') else None
+
+    image_path = os.path.join(
+        pathes['images'],
+        f'{book_id} {sanitized_title}.txt'
+    ) if pathes.get('images') else None
+
     return Book(
         title=sanitized_title,
         img_url=full_img_url,
@@ -115,9 +112,11 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     return books_urls
 
 
-def get_book(book_url: str, args: Namespace, pathes: dict) -> Book | None:
+def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Book | None:
     """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
     Args:
+        skip_imgs (bool): Не скачивать обложки
+        skip_txt (bool): Не скачивать текст
         pathes (dict): Пути к папкам
         args (Namespace): Аргументы запуска скрипта
         book_url (str): Ссылка на страницу книги.
@@ -130,10 +129,10 @@ def get_book(book_url: str, args: Namespace, pathes: dict) -> Book | None:
         try:
             response = requests.get(book_url)
             dl.check_response(response)
-            book = parse_book_page(response, args, pathes)
-            if not args.skip_txt:
+            book = parse_book_page(response, pathes)
+            if not skip_txt:
                 dl.download_txt(book)
-            if not args.skip_imgs:
+            if not skip_imgs:
                 dl.download_img(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
