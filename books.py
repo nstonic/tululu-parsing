@@ -40,10 +40,11 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise req_ex.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(response: requests.Response, folders: dict) -> Book:
+def parse_book_page(response: requests.Response, args: Namespace, pathes: dict) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
-        folders: Папки, куда будут сохраняться файлы книги
+        args: Аргументы запуска скрипта
+        pathes: Папки, куда будут сохраняться файлы книги
         response (str): HTML код страницы.
     Returns:
         Book: Объект книги.
@@ -70,16 +71,21 @@ def parse_book_page(response: requests.Response, folders: dict) -> Book:
         genre.text
         for genre in soup.select('span.d_book a')
     ]
-    book_path = os.path.join(
-        folders['books'],
-        f'{book_id} {sanitized_title}.txt'
-    )
-    image_path = os.path.join(
-        folders['images'],
-        get_image_file_name(full_img_url)
-    )
+    if not args.skip_txt:
+        book_path = os.path.join(
+            pathes['books'],
+            f'{book_id} {sanitized_title}.txt'
+        )
+    else:
+        book_path=None
+    if not args.skip_imgs:
+        image_path = os.path.join(
+            pathes['images'],
+            get_image_file_name(full_img_url)
+        )
+    else:
+        image_path = None
     return Book(
-        book_id=book_id,
         title=sanitized_title,
         img_url=full_img_url,
         txt_url=full_txt_url,
@@ -109,30 +115,25 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     return books_urls
 
 
-def get_book(book_url: str, args: Namespace) -> Book | None:
+def get_book(book_url: str, args: Namespace, pathes: dict) -> Book | None:
     """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
     Args:
-        args: Аргументы запуска скрипта
+        pathes (dict): Пути к папкам
+        args (Namespace): Аргументы запуска скрипта
         book_url (str): Ссылка на страницу книги.
     Returns:
         book: Объект класса Book.
     """
-    folders = {
-        'books': os.path.join(args.dest_folder, 'books'),
-        'images': os.path.join(args.dest_folder, 'images')
-    }
     delay = 0
     while True:
         delay = min(delay, 30)
         try:
             response = requests.get(book_url)
             dl.check_response(response)
-            book = parse_book_page(response, folders)
+            book = parse_book_page(response, args, pathes)
             if not args.skip_txt:
-                os.makedirs(folders['books'], exist_ok=True)
                 dl.download_txt(book)
             if not args.skip_imgs:
-                os.makedirs(folders['images'], exist_ok=True)
                 dl.download_img(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения

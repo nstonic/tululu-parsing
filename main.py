@@ -4,8 +4,30 @@ import os
 from datetime import datetime
 
 import argparse
+from pathvalidate.argparse import validate_filepath_arg
 
 from books import get_book, get_book_urls_by_caterogy
+
+
+def prepare_dests(args: argparse.Namespace) -> dict:
+    """Функция для создания всех необходимых папок, а также получения путей к файлам логов и json
+    Args:
+        args: аргументы запуска скрипта
+    Returns:
+        dict: словарь, содержащий пути к папкам и файлам
+    """
+    pathes = {
+        'log': os.path.join(args.dest_folder, f'{datetime.now().strftime("%Y-%m-%d %H.%M")}.log'),
+        'json': args.json_path or os.path.join(args.dest_folder, 'books.json')
+    }
+    if not args.skip_txt:
+        pathes['books'] = os.path.join(args.dest_folder, 'books')
+        os.makedirs(pathes['books'], exist_ok=True)
+    if not args.skip_imgs:
+        pathes['images'] = os.path.join(args.dest_folder, 'images')
+        os.makedirs(pathes['images'], exist_ok=True)
+    os.makedirs(os.path.split(pathes['json'])[0], exist_ok=True)
+    return pathes
 
 
 def get_arguments() -> argparse.Namespace:
@@ -23,16 +45,18 @@ def get_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--end_page',
         type=int,
-        default=10,
+        default=4,
         help='Закончить парсинг на этой странице (включительно)'
     )
     parser.add_argument(
         '--dest_folder',
         default='downladed_books',
+        type=validate_filepath_arg,
         help='Путь к каталогу с результатами парсинга: картинкам, книгам, JSON'
     )
     parser.add_argument(
         '--json_path',
+        type=validate_filepath_arg,
         help='Свой путь к json файлу с результатами'
     )
     parser.add_argument(
@@ -50,10 +74,9 @@ def get_arguments() -> argparse.Namespace:
 
 def main():
     args = get_arguments()
-    json_path = os.path.join(args.json_path or args.dest_folder, 'books.json')
-    log_path = os.path.join(args.dest_folder, f'{datetime.now().strftime("%Y-%m-%d %H.%M")}.log')
+    pathes = prepare_dests(args)
     logging.basicConfig(
-        filename=log_path,
+        filename=pathes['log'],
         level=logging.WARNING
     )
 
@@ -65,10 +88,10 @@ def main():
     )
     books = []
     for book_url in books_urls:
-        if book := get_book(book_url, args):
+        if book := get_book(book_url, args, pathes):
             print(book_url)
-            books.append(book.__dict__)
-    with open(json_path, 'w') as file:
+            books.append(book.to_dict())
+    with open(pathes['json'], 'w') as file:
         json.dump(books, file, ensure_ascii=False, indent=4)
 
 
