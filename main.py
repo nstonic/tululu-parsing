@@ -8,7 +8,7 @@ import argparse
 from books import get_book, get_book_urls_by_caterogy
 
 
-def get_parameters() -> argparse.Namespace:
+def get_arguments() -> argparse.Namespace:
     """Функция для получения параметров запуска скрипта.
     Returns:
         Namespace: Объект параметров argparse.
@@ -32,6 +32,10 @@ def get_parameters() -> argparse.Namespace:
         help='Путь к каталогу с результатами парсинга: картинкам, книгам, JSON'
     )
     parser.add_argument(
+        '--json_path',
+        help='Свой путь к json файлу с результатами'
+    )
+    parser.add_argument(
         '--skip_imgs',
         action='store_true',
         help='Не скачивать картинки'
@@ -41,15 +45,11 @@ def get_parameters() -> argparse.Namespace:
         action='store_true',
         help='Не скачивать книги'
     )
-    parser.add_argument(
-        '--json_path',
-        help='Свой путь к json файлу с результатами'
-    )
     return parser.parse_args()
 
 
 def main():
-    args = get_parameters()
+    args = get_arguments()
     folders = {
         'books': os.path.join(args.dest_folder, 'books'),
         'images': os.path.join(args.dest_folder, 'images')
