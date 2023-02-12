@@ -109,15 +109,18 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     return books_urls
 
 
-def get_book(book_url: str, folders: dict, args: Namespace) -> Book | None:
+def get_book(book_url: str, args: Namespace) -> Book | None:
     """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
     Args:
-        args: Параметры запуска скрипта
-        folders: Папки, куда будут сохраняться файлы книги
+        args: Аргументы запуска скрипта
         book_url (str): Ссылка на страницу книги.
     Returns:
         book: Объект класса Book.
     """
+    folders = {
+        'books': os.path.join(args.dest_folder, 'books'),
+        'images': os.path.join(args.dest_folder, 'images')
+    }
     delay = 0
     while True:
         delay = min(delay, 30)
@@ -133,7 +136,7 @@ def get_book(book_url: str, folders: dict, args: Namespace) -> Book | None:
                 dl.download_img(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
-            logging.warning(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
+            logging.error(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
             time.sleep(delay)
             delay += 5
             continue

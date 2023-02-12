@@ -50,25 +50,22 @@ def get_arguments() -> argparse.Namespace:
 
 def main():
     args = get_arguments()
-    folders = {
-        'books': os.path.join(args.dest_folder, 'books'),
-        'images': os.path.join(args.dest_folder, 'images')
-    }
     json_path = os.path.join(args.json_path or args.dest_folder, 'books.json')
-
+    log_path = os.path.join(args.dest_folder, f'{datetime.now().strftime("%Y-%m-%d %H.%M")}.log')
     logging.basicConfig(
-        filename=f'books {datetime.now().strftime("%Y-%m-%d %H.%M")}.log',
+        filename=log_path,
         level=logging.WARNING
     )
 
+    category_url = 'https://tululu.org/l55/'
     books_urls = get_book_urls_by_caterogy(
-        'https://tululu.org/l55/',
+        category_url,
         start_page=args.start_page,
         end_page=args.end_page
     )
     books = []
     for book_url in books_urls:
-        if book := get_book(book_url, folders, args):
+        if book := get_book(book_url, args):
             print(book_url)
             books.append(book.__dict__)
     with open(json_path, 'w') as file:
