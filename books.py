@@ -51,29 +51,36 @@ def parse_book_page(response: requests.Response, folders: dict) -> Book:
 
     soup = BeautifulSoup(response.text, 'lxml')
 
-    book_id = int(urlparse(response.url).path.strip("/").strip("b"))
+    book_id = urlparse(response.url).path.strip("/").strip('b')
     title, author = soup.find('h1').text.split('::')
+    sanitized_title = sanitize_filename(title.strip())
+    full_img_url = urljoin(
+        response.url,
+        soup.select_one('div.bookimage img')['src']
+    )
     full_txt_url = urljoin(
         response.url,
         get_txt_url(soup)
     )
-    full_img_url = urljoin(
-        response.url,
-        soup.find('div', class_='bookimage').find('img')['src']
-    )
     comments = [
-        comment.find('span', class_='black').text
-        for comment in soup.find_all('div', class_='texts')
+        comment.select_one('span.black').text
+        for comment in soup.select('div.texts')
     ]
     genres = [
         genre.text
-        for genre in soup.find('span', class_='d_book').find_all('a')
+        for genre in soup.select('span.d_book a')
     ]
-    book_path = os.path.join(folders['books'], f'{book_id:02.0f}. {title.strip()}.txt')
-    image_path = os.path.join(folders['images'], get_image_file_name(full_img_url))
+    book_path = os.path.join(
+        folders['books'],
+        f'{book_id}. {sanitized_title}.txt'
+    )
+    image_path = os.path.join(
+        folders['images'],
+        get_image_file_name(full_img_url)
+    )
     return Book(
         book_id=book_id,
-        title=sanitize_filename(title.strip()),
+        title=sanitized_title,
         img_url=full_img_url,
         txt_url=full_txt_url,
         comments=comments,

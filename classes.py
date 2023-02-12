@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class Book:
     """Класс книги"""
-    book_id: int
+    book_id: str
     title: str
     img_url: str
     txt_url: str
