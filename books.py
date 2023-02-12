@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
 from classes import Book
-import download as dl
+from download import download_txt, download_img, check_response
 
 
 def get_image_file_name(url: str) -> str:
@@ -118,7 +118,6 @@ def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Bo
         skip_imgs (bool): Не скачивать обложки
         skip_txt (bool): Не скачивать текст
         pathes (dict): Пути к папкам
-        args (Namespace): Аргументы запуска скрипта
         book_url (str): Ссылка на страницу книги.
     Returns:
         book: Объект класса Book.
@@ -128,12 +127,12 @@ def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Bo
         delay = min(delay, 30)
         try:
             response = requests.get(book_url)
-            dl.check_response(response)
+            check_response(response)
             book = parse_book_page(response, pathes)
             if not skip_txt:
-                dl.download_txt(book)
+                download_txt(book)
             if not skip_imgs:
-                dl.download_img(book)
+                download_img(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
             logging.error(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
