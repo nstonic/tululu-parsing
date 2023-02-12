@@ -1,8 +1,7 @@
-import os
-from urllib.parse import unquote, urlparse
-
 import requests
 import requests.exceptions as req_ex
+
+from classes import Book
 
 
 def check_response(response: requests.Response):
@@ -17,42 +16,23 @@ def check_response(response: requests.Response):
         raise req_ex.HTTPError('Страница не найдена.')
 
 
-def get_image_file_name(url: str) -> str:
-    """Функция для получения имени файла из ссылки.
-    Args:
-        url (str): Cсылка на файл, который хотим скачать.
-    Returns:
-        str: Имя для сохранения файла.
-    """
-    parsed_link = unquote(urlparse(url).path)
-    return os.path.split(parsed_link)[-1]
-
-
-def download_txt(url: str, filename: str, folder: str):
+def download_txt(book: Book):
     """Функция для скачивания текстовых файлов.
     Args:
-        url (str): Cсылка на текст, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
+        book: Объект книги
     """
-    response = requests.get(url)
+    response = requests.get(book.txt_url)
     check_response(response)
-
-    filepath = os.path.join(folder, f'{filename}')
-    with open(filepath, 'w', encoding='utf-8') as file:
+    with open(book.book_path, 'w', encoding='utf-8') as file:
         file.write(response.text)
 
 
-def download_img(url: str, filename: str, folder: str):
+def download_img(book: Book):
     """Функция для скачивания бинарных файлов.
     Args:
-        url (str): Cсылка на файл, который хочется скачать.
-        filename (str): Имя файла, с которым сохранять.
-        folder (str): Папка, куда сохранять.
+        book: Объект книги
     """
-    response = requests.get(url)
+    response = requests.get(book.img_url)
     check_response(response)
-
-    filepath = os.path.join(folder, f'{filename}')
-    with open(filepath, 'wb') as file:
+    with open(book.image_path, 'wb') as file:
         file.write(response.content)

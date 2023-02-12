@@ -1,16 +1,28 @@
 import logging
+import os
 import sys
 import time
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse, unquote
 
 import requests
 import requests.exceptions as req_ex
 from bs4 import BeautifulSoup
-from pathvalidate import sanitize_filename as sf
+from pathvalidate import sanitize_filename
 
 from classes import Book
 import download as dl
+
+
+def get_image_file_name(url: str) -> str:
+    """Функция для получения имени файла из ссылки.
+    Args:
+        url (str): Cсылка на файл, который хотим скачать.
+    Returns:
+        str: Имя для сохранения файла.
+    """
+    parsed_link = unquote(urlparse(url).path)
+    return os.path.split(parsed_link)[-1]
 
 
 def get_txt_url(soup: BeautifulSoup) -> str:
@@ -28,10 +40,10 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(response: requests.Response, book_id: int) -> Book:
+def parse_book_page(response: requests.Response, folders: dict) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
-        book_id: Id книги
+        folders: Папки, куда будут сохраняться файлы книги
         response (str): HTML код страницы.
     Returns:
         Book: Объект книги.
@@ -39,6 +51,7 @@ def parse_book_page(response: requests.Response, book_id: int) -> Book:
 
     soup = BeautifulSoup(response.text, 'lxml')
 
+    book_id = int(urlparse(response.url).path.strip("/").strip("b"))
     title, author = soup.find('h1').text.split('::')
     full_txt_url = urljoin(
         response.url,
@@ -56,43 +69,56 @@ def parse_book_page(response: requests.Response, book_id: int) -> Book:
         genre.text
         for genre in soup.find('span', class_='d_book').find_all('a')
     ]
-
+    book_path = os.path.join(folders['books'], f'{book_id:02.0f}. {title.strip()}.txt')
+    image_path = os.path.join(folders['images'], get_image_file_name(full_img_url))
     return Book(
-        id=book_id,
-        sanitized_title=sf(title.strip()),
+        book_id=book_id,
+        title=sanitize_filename(title.strip()),
         img_url=full_img_url,
         txt_url=full_txt_url,
         comments=comments,
         genres=genres,
-        author=author.strip()
+        author=author.strip(),
+        book_path=book_path,
+        image_path=image_path
     )
 
 
-def get_book_by_id(book_id: int) -> Book | None:
+def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int) -> list[str]:
+    """Функция для получения ссылок на книги по категории.
+    Args:
+        category_url (str): Ссылка на страницу с категорией книг.
+        start_page (int): страница, с которой начинаем сбор ссылок
+        end_page (int): страница, на которой заканчиваем
+    Returns:
+        books_urls: Список ссылок на книги.
+    """
+    books_urls = []
+    for page in range(start_page, end_page + 1):
+        response = requests.get(urljoin(category_url, str(page)))
+        soup = BeautifulSoup(response.text, 'lxml')
+        books_urls.extend(urljoin(response.url, link['href'])
+                          for link in soup.select('.d_book div.bookimage a'))
+    return books_urls
+
+
+def get_book(book_url: str, folders: dict) -> Book | None:
     """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
     Args:
-        book_id (str): Id книги.
+        folders: Папки, куда будут сохраняться файлы книги
+        book_url (str): Ссылка на страницу книги.
     Returns:
         book: Объект класса Book.
     """
-    url = f'https://tululu.org/b{book_id}/'
     delay = 0
     while True:
         delay = min(delay, 30)
         try:
-            response = requests.get(url)
+            response = requests.get(book_url)
             dl.check_response(response)
-            book = parse_book_page(response, book_id)
-            dl.download_txt(
-                url=book.txt_url,
-                filename=f'{book.id:02.0f}. {book.sanitized_title}.txt',
-                folder='books'
-            )
-            dl.download_img(
-                url=book.img_url,
-                filename=dl.get_image_file_name(book.img_url),
-                folder='images'
-            )
+            book = parse_book_page(response, folders)
+            dl.download_txt(book)
+            dl.download_img(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
             logging.warning(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
@@ -102,7 +128,7 @@ def get_book_by_id(book_id: int) -> Book | None:
         except req_ex.HTTPError as ex:
             #  Помимо стандартных случаев, исключение также возбуждается в случае обнаружения редиректа,
             #  либо при отсутствии ссылки на txt файл
-            msg = f'Книга по ссылке {url} недоступна. Причина: {ex}'
+            msg = f'Книга по ссылке {book_url} недоступна. Причина: {ex}'
             logging.warning(msg)
             print(f'\n{msg}', file=sys.stderr)
             return

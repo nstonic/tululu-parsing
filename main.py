@@ -1,10 +1,11 @@
+import json
 import logging
 import os
 from datetime import datetime
 
 import argparse
 
-from books import get_book_by_id
+from books import get_book, get_book_urls_by_caterogy
 
 
 def get_parameters() -> argparse.Namespace:
@@ -30,6 +31,11 @@ def get_parameters() -> argparse.Namespace:
 
 def main():
     parameters = get_parameters()
+    folders = {
+        'books': 'books',
+        'images': 'images'
+    }
+
     logging.basicConfig(
         filename=f'books {datetime.now().strftime("%Y-%m-%d %H.%M")}.log',
         level=logging.WARNING
@@ -38,14 +44,14 @@ def main():
     os.makedirs('books', exist_ok=True)
     os.makedirs('images', exist_ok=True)
 
-    for book_id in range(parameters.start_id, parameters.end_id + 1):
-        if book := get_book_by_id(book_id):
-            print(f'\nНазвание: {book.sanitized_title}\n'
-                  f'Автор: {book.author}\n'
-                  f'Жанры: {book.genres}\n'
-                  'Комментарии: ')
-            for comment in book.comments:
-                print(comment)
+    books_urls = get_book_urls_by_caterogy('https://tululu.org/l55/', 1, 1)
+    books = []
+    for book_url in books_urls:
+        if book := get_book(book_url, folders):
+            print(book)
+            books.append(book.__dict__)
+    with open('books.json', 'w') as file:
+        json.dump(books, file, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
