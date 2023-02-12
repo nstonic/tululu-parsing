@@ -1,7 +1,7 @@
 import logging
 import os
-import sys
 import time
+from argparse import Namespace
 from datetime import datetime
 from urllib.parse import urljoin, urlparse, unquote
 
@@ -109,9 +109,10 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     return books_urls
 
 
-def get_book(book_url: str, folders: dict) -> Book | None:
+def get_book(book_url: str, folders: dict, args: Namespace) -> Book | None:
     """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
     Args:
+        args: Параметры запуска скрипта
         folders: Папки, куда будут сохраняться файлы книги
         book_url (str): Ссылка на страницу книги.
     Returns:
@@ -124,8 +125,12 @@ def get_book(book_url: str, folders: dict) -> Book | None:
             response = requests.get(book_url)
             dl.check_response(response)
             book = parse_book_page(response, folders)
-            dl.download_txt(book)
-            dl.download_img(book)
+            if not args.skip_txt:
+                os.makedirs(folders['books'], exist_ok=True)
+                dl.download_txt(book)
+            if not args.skip_imgs:
+                os.makedirs(folders['images'], exist_ok=True)
+                dl.download_img(book)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
             logging.warning(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
@@ -135,9 +140,7 @@ def get_book(book_url: str, folders: dict) -> Book | None:
         except req_ex.HTTPError as ex:
             #  Помимо стандартных случаев, исключение также возбуждается в случае обнаружения редиректа,
             #  либо при отсутствии ссылки на txt файл
-            msg = f'Книга по ссылке {book_url} недоступна. Причина: {ex}'
-            logging.warning(msg)
-            print(f'\n{msg}', file=sys.stderr)
+            logging.warning(f'Книга по ссылке {book_url} недоступна. Причина: {ex}')
             return
         else:
             return book
