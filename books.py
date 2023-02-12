@@ -34,10 +34,10 @@ def get_txt_url(soup: BeautifulSoup) -> str:
     Raises:
         HTTPError: Если ссылки в документе нет
     """
-    if txt_link := soup.find('a', string='скачать txt'):
+    if txt_link := soup.select_one('a[href^="/txt.php"]'):
         return txt_link['href']
     else:
-        raise requests.exceptions.HTTPError('Отсутствует ссылка на txt файл')
+        raise req_ex.HTTPError('Отсутствует ссылка на txt файл')
 
 
 def parse_book_page(response: requests.Response, folders: dict) -> Book:
@@ -52,7 +52,7 @@ def parse_book_page(response: requests.Response, folders: dict) -> Book:
     soup = BeautifulSoup(response.text, 'lxml')
 
     book_id = urlparse(response.url).path.strip("/").strip('b')
-    title, author = soup.find('h1').text.split('::')
+    title, author = soup.select_one('h1').text.split('::')
     sanitized_title = sanitize_filename(title.strip())
     full_img_url = urljoin(
         response.url,
@@ -72,7 +72,7 @@ def parse_book_page(response: requests.Response, folders: dict) -> Book:
     ]
     book_path = os.path.join(
         folders['books'],
-        f'{book_id}. {sanitized_title}.txt'
+        f'{book_id} {sanitized_title}.txt'
     )
     image_path = os.path.join(
         folders['images'],
