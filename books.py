@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-from argparse import Namespace
 from datetime import datetime
 from urllib.parse import urljoin, urlparse, unquote
 
@@ -40,11 +39,11 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise req_ex.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(response: requests.Response, pathes: dict) -> Book:
+def parse_book_page(response: requests.Response, book_path: str, image_path: str) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
-        args: Аргументы запуска скрипта
-        pathes: Папки, куда будут сохраняться файлы книги
+        image_path (str): Папка для сохранения обложки книги
+        book_path (str): Папка для сохранения текста книги
         response (str): HTML код страницы.
     Returns:
         Book: Объект книги.
@@ -73,14 +72,14 @@ def parse_book_page(response: requests.Response, pathes: dict) -> Book:
     ]
 
     book_path = os.path.join(
-        pathes['books'],
+        book_path,
         f'{book_id} {sanitized_title}.txt'
-    ) if pathes.get('books') else None
+    ) if book_path else None
 
     image_path = os.path.join(
-        pathes['images'],
-        f'{book_id} {sanitized_title}.txt'
-    ) if pathes.get('images') else None
+        image_path,
+        get_image_file_name(full_img_url)
+    ) if image_path else None
 
     return Book(
         title=sanitized_title,
@@ -128,7 +127,11 @@ def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Bo
         try:
             response = requests.get(book_url)
             check_response(response)
-            book = parse_book_page(response, pathes)
+            book = parse_book_page(
+                response,
+                book_path=pathes.get('books'),
+                image_path=pathes.get('images')
+            )
             if not skip_txt:
                 download_txt(txt_url=book.txt_url, book_path=book.book_path)
             if not skip_imgs:

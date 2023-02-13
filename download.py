@@ -1,8 +1,6 @@
 import requests
 import requests.exceptions as req_ex
 
-from classes import Book
-
 
 def check_response(response: requests.Response):
     """Функция для проверки отклика на ошибки.
