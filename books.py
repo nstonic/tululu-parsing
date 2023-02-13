@@ -86,6 +86,18 @@ def parse_book_page(response: requests.Response, txt_path: str, image_path: str)
 
 
 @check_response
+def get_category_page(page_url: str) -> requests.Response:
+    """Функция для получения страницы категории.
+    Args:
+        page_url: url страницы
+    Returns:
+        Response
+    """
+    response = requests.get(page_url)
+    raise_for_status_or_redirect(response)
+    return response
+
+
 def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int) -> list[str]:
     """Функция для получения ссылок на книги по категории.
     Args:
@@ -97,8 +109,7 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     """
     books_urls = []
     for page in range(start_page, end_page + 1):
-        response = requests.get(urljoin(category_url, str(page)))
-        raise_for_status_or_redirect(response)
+        response = get_category_page(urljoin(category_url, str(page)))
         soup = BeautifulSoup(response.text, 'lxml')
         books_urls.extend(urljoin(response.url, link['href'])
                           for link in soup.select('.d_book div.bookimage a'))
