@@ -1,7 +1,4 @@
-import logging
 import os
-import time
-from datetime import datetime
 from urllib.parse import urljoin, urlparse, unquote
 
 import requests
@@ -10,7 +7,8 @@ from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
 from classes import Book
-from download import download_txt, download_img, check_response
+from decorators import check_response
+from download import download_txt, download_img, raise_for_status_or_redirect
 
 
 def get_image_file_name(url: str) -> str:
@@ -93,6 +91,7 @@ def parse_book_page(response: requests.Response, book_path: str, image_path: str
     )
 
 
+@raise_for_status_or_redirect
 def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int) -> list[str]:
     """Функция для получения ссылок на книги по категории.
     Args:
@@ -105,14 +104,16 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     books_urls = []
     for page in range(start_page, end_page + 1):
         response = requests.get(urljoin(category_url, str(page)))
+        raise_for_status_or_redirect(response)
         soup = BeautifulSoup(response.text, 'lxml')
         books_urls.extend(urljoin(response.url, link['href'])
                           for link in soup.select('.d_book div.bookimage a'))
     return books_urls
 
 
-def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Book | None:
-    """Функция для получения книги. Добавлена устойчивость к ошибкам соединения.
+@raise_for_status_or_redirect
+def get_book(book_url: str, pathes: dict) -> Book | None:
+    """Функция для получения книги.
     Args:
         skip_imgs (bool): Не скачивать обложки
         skip_txt (bool): Не скачивать текст
@@ -121,31 +122,15 @@ def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Bo
     Returns:
         book: Объект класса Book.
     """
-    delay = 0
-    while True:
-        delay = min(delay, 30)
-        try:
-            response = requests.get(book_url)
-            check_response(response)
-            book = parse_book_page(
-                response,
-                book_path=pathes.get('books'),
-                image_path=pathes.get('images')
-            )
-            if not skip_txt:
-                download_txt(txt_url=book.txt_url, book_path=book.book_path)
-            if not skip_imgs:
-                download_img(img_url=book.img_url, image_path=book.image_path)
-        except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
-            # Проверка на разрыв соединения
-            logging.error(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
-            time.sleep(delay)
-            delay += 5
-            continue
-        except req_ex.HTTPError as ex:
-            #  Помимо стандартных случаев, исключение также возбуждается в случае обнаружения редиректа,
-            #  либо при отсутствии ссылки на txt файл
-            logging.warning(f'Книга по ссылке {book_url} недоступна. Причина: {ex}')
-            return
-        else:
-            return book
+    response = requests.get(book_url)
+    raise_for_status_or_redirect(response)
+    book = parse_book_page(
+        response,
+        book_path=pathes.get('books'),
+        image_path=pathes.get('images')
+    )
+    if pathes.get('book'):
+        download_txt(txt_url=book.txt_url, book_path=book.book_path)
+    if pathes.get('images'):
+        download_img(img_url=book.img_url, image_path=book.image_path)
+    return book

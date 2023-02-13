@@ -96,8 +96,7 @@ def main():
     )
     books = []
     for book_url in books_urls:
-        if book := get_book(book_url, pathes,
-                            skip_txt=args.skip_txt, skip_imgs=args.skip_imgs):
+        if book := get_book(book_url, pathes):
             print(book_url)
             books.append(book.to_dict())
     with open(pathes['json'], 'w') as file:

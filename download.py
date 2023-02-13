@@ -2,7 +2,7 @@ import requests
 import requests.exceptions as req_ex
 
 
-def check_response(response: requests.Response):
+def raise_for_status_or_redirect(response: requests.Response):
     """Функция для проверки отклика на ошибки.
     Args:
         response (Response): Объект отклика сервера.
@@ -21,7 +21,7 @@ def download_txt(txt_url: str, book_path: str):
         book_path (str): Путь к файлу, куда скачивать
     """
     response = requests.get(txt_url)
-    check_response(response)
+    raise_for_status_or_redirect(response)
     with open(book_path, 'w', encoding='utf-8') as file:
         file.write(response.text)
 
@@ -33,6 +33,6 @@ def download_img(img_url: str, image_path: str):
         image_path (str): Путь к файлу, куда скачивать
     """
     response = requests.get(img_url)
-    check_response(response)
+    raise_for_status_or_redirect(response)
     with open(image_path, 'wb') as file:
         file.write(response.content)
