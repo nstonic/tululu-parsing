@@ -1,6 +1,8 @@
 import requests
 import requests.exceptions as req_ex
 
+from decorators import check_response
+
 
 def raise_for_status_or_redirect(response: requests.Response):
     """Функция для проверки отклика на ошибки.
@@ -14,6 +16,7 @@ def raise_for_status_or_redirect(response: requests.Response):
         raise req_ex.HTTPError('Страница не найдена.')
 
 
+@check_response
 def download_txt(txt_url: str, book_path: str):
     """Функция для скачивания текстовых файлов.
     Args:
@@ -26,6 +29,7 @@ def download_txt(txt_url: str, book_path: str):
         file.write(response.text)
 
 
+@check_response
 def download_img(img_url: str, image_path: str):
     """Функция для скачивания бинарных файлов.
     Args:
