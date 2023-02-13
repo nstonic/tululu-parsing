@@ -70,7 +70,7 @@ def get_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--skip_txt',
         action='store_true',
-        help='Не скачивать книги'
+        help='Не скачивать книги. В этом случае будут скачаны обложки даже тех книг, у которых нет ссылки на текст.'
     )
     return parser.parse_args()
 

@@ -37,11 +37,11 @@ def get_txt_url(soup: BeautifulSoup) -> str:
         raise req_ex.HTTPError('Отсутствует ссылка на txt файл')
 
 
-def parse_book_page(response: requests.Response, book_path: str, image_path: str) -> Book:
+def parse_book_page(response: requests.Response, txt_path: str, image_path: str) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
         image_path (str): Папка для сохранения обложки книги
-        book_path (str): Папка для сохранения текста книги
+        txt_path (str): Папка для сохранения текста книги
         response (str): HTML код страницы.
     Returns:
         Book: Объект книги.
@@ -52,14 +52,6 @@ def parse_book_page(response: requests.Response, book_path: str, image_path: str
     book_id = urlparse(response.url).path.strip("/").strip('b')
     title, author = soup.select_one('h1').text.split('::')
     sanitized_title = sanitize_filename(title.strip())
-    full_img_url = urljoin(
-        response.url,
-        soup.select_one('div.bookimage img')['src']
-    )
-    full_txt_url = urljoin(
-        response.url,
-        get_txt_url(soup)
-    )
     comments = [
         comment.select_one('span.black').text
         for comment in soup.select('div.texts')
@@ -69,26 +61,28 @@ def parse_book_page(response: requests.Response, book_path: str, image_path: str
         for genre in soup.select('span.d_book a')
     ]
 
-    book_path = os.path.join(
-        book_path,
-        f'{book_id} {sanitized_title}.txt'
-    ) if book_path else None
-
-    image_path = os.path.join(
-        image_path,
-        get_image_file_name(full_img_url)
-    ) if image_path else None
-
-    return Book(
+    book = Book(
         title=sanitized_title,
-        img_url=full_img_url,
-        txt_url=full_txt_url,
         comments=comments,
         genres=genres,
         author=author.strip(),
-        book_path=book_path,
-        image_path=image_path
     )
+
+    if txt_path:
+        book.txt_url = urljoin(response.url, get_txt_url(soup))
+        book.book_path = os.path.join(
+            txt_path,
+            f'{book_id} {sanitized_title}.txt'
+        )
+
+    if image_path:
+        book.img_url = urljoin(response.url, soup.select_one('div.bookimage img')['src'])
+        book.image_path = os.path.join(
+            image_path,
+            get_image_file_name(book.img_url)
+        )
+
+    return book
 
 
 @check_response
@@ -126,11 +120,11 @@ def get_book(book_url: str, pathes: dict) -> Book | None:
     raise_for_status_or_redirect(response)
     book = parse_book_page(
         response,
-        book_path=pathes.get('books'),
+        txt_path=pathes.get('books'),
         image_path=pathes.get('images')
     )
-    if pathes.get('book'):
+    if book.txt_url:
         download_txt(txt_url=book.txt_url, book_path=book.book_path)
-    if pathes.get('images'):
+    if book.img_url:
         download_img(img_url=book.img_url, image_path=book.image_path)
     return book
