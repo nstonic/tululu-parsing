@@ -91,7 +91,7 @@ def parse_book_page(response: requests.Response, book_path: str, image_path: str
     )
 
 
-@raise_for_status_or_redirect
+@check_response
 def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int) -> list[str]:
     """Функция для получения ссылок на книги по категории.
     Args:
@@ -111,7 +111,7 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     return books_urls
 
 
-@raise_for_status_or_redirect
+@check_response
 def get_book(book_url: str, pathes: dict) -> Book | None:
     """Функция для получения книги.
     Args:
