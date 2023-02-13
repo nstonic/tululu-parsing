@@ -130,9 +130,9 @@ def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Bo
             check_response(response)
             book = parse_book_page(response, pathes)
             if not skip_txt:
-                download_txt(book)
+                download_txt(txt_url=book.txt_url, book_path=book.book_path)
             if not skip_imgs:
-                download_img(book)
+                download_img(img_url=book.img_url, image_path=book.image_path)
         except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
             # Проверка на разрыв соединения
             logging.error(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')

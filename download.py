@@ -16,23 +16,25 @@ def check_response(response: requests.Response):
         raise req_ex.HTTPError('Страница не найдена.')
 
 
-def download_txt(book: Book):
+def download_txt(txt_url: str, book_path: str):
     """Функция для скачивания текстовых файлов.
     Args:
-        book: Объект книги
+        txt_url (str): Ссылка на книгу
+        book_path (str): Путь к файлу, куда скачивать
     """
-    response = requests.get(book.txt_url)
+    response = requests.get(txt_url)
     check_response(response)
-    with open(book.book_path, 'w', encoding='utf-8') as file:
+    with open(book_path, 'w', encoding='utf-8') as file:
         file.write(response.text)
 
 
-def download_img(book: Book):
+def download_img(img_url: str, image_path: str):
     """Функция для скачивания бинарных файлов.
     Args:
-        book: Объект книги
+        img_url (str): Ссылка на обложку
+        image_path (str): Путь к файлу, куда скачивать
     """
-    response = requests.get(book.img_url)
+    response = requests.get(img_url)
     check_response(response)
-    with open(book.image_path, 'wb') as file:
+    with open(image_path, 'wb') as file:
         file.write(response.content)
