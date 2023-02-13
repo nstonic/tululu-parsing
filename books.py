@@ -109,8 +109,6 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
 def get_book(book_url: str, pathes: dict) -> Book | None:
     """Функция для получения книги.
     Args:
-        skip_imgs (bool): Не скачивать обложки
-        skip_txt (bool): Не скачивать текст
         pathes (dict): Пути к папкам
         book_url (str): Ссылка на страницу книги.
     Returns:
