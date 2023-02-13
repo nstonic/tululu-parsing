@@ -9,24 +9,27 @@ from pathvalidate.argparse import validate_filepath_arg
 from books import get_book, get_book_urls_by_caterogy
 
 
-def prepare_dests(args: argparse.Namespace) -> dict:
+def prepare_dests(dest_folder: str, json_path: str, skip_txt: bool, skip_imgs: bool) -> dict:
     """Функция для создания всех необходимых папок, а также получения путей к файлам логов и json
     Args:
-        args: аргументы запуска скрипта
+        dest_folder (str): Путь к каталогу с результатами парсинга
+        json_path (str): Свой путь к json файлу с результатами
+        skip_txt (bool): Не скачивать тексты
+        skip_imgs (bool): Не скачивать обложки
     Returns:
         dict: словарь, содержащий пути к папкам и файлам
     """
     pathes = {
-        'log': os.path.join(args.dest_folder, f'{datetime.now().strftime("%Y-%m-%d %H.%M")}.log'),
-        'json': args.json_path or os.path.join(args.dest_folder, 'books.json')
+        'log': os.path.join(dest_folder, f'{datetime.now().strftime("%Y-%m-%d %H.%M")}.log'),
+        'json': json_path or os.path.join(dest_folder, 'books.json')
     }
-    if not args.skip_txt:
-        pathes['books'] = os.path.join(args.dest_folder, 'books')
-        os.makedirs(pathes['books'], exist_ok=True)
-    if not args.skip_imgs:
-        pathes['images'] = os.path.join(args.dest_folder, 'images')
-        os.makedirs(pathes['images'], exist_ok=True)
     os.makedirs(os.path.split(pathes['json'])[0], exist_ok=True)
+    if not skip_txt:
+        pathes['books'] = os.path.join(dest_folder, 'books')
+        os.makedirs(pathes['books'], exist_ok=True)
+    if not skip_imgs:
+        pathes['images'] = os.path.join(dest_folder, 'images')
+        os.makedirs(pathes['images'], exist_ok=True)
     return pathes
 
 
@@ -74,7 +77,12 @@ def get_arguments() -> argparse.Namespace:
 
 def main():
     args = get_arguments()
-    pathes = prepare_dests(args)
+    pathes = prepare_dests(
+        dest_folder=args.dest_folder,
+        json_path=args.json_path,
+        skip_txt=args.skip_txt,
+        skip_imgs=args.skip_imgs
+    )
     logging.basicConfig(
         filename=pathes['log'],
         level=logging.WARNING
