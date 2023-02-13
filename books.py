@@ -49,7 +49,6 @@ def parse_book_page(response: requests.Response, txt_path: str, image_path: str)
 
     soup = BeautifulSoup(response.text, 'lxml')
 
-    book_id = urlparse(response.url).path.strip("/").strip('b')
     title, author = soup.select_one('h1').text.split('::')
     sanitized_title = sanitize_filename(title.strip())
     comments = [
@@ -69,6 +68,7 @@ def parse_book_page(response: requests.Response, txt_path: str, image_path: str)
     )
 
     if txt_path:
+        book_id = urlparse(response.url).path.strip("/").strip('b')
         book.txt_url = urljoin(response.url, get_txt_url(soup))
         book.book_path = os.path.join(
             txt_path,
