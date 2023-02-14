@@ -1,7 +1,6 @@
-from error_checking import get_response, check_page_errors
+from error_checking import get_response
 
 
-@check_page_errors
 def download_txt(txt_url: str, book_path: str):
     """Функция для скачивания текстовых файлов.
     Args:
@@ -13,7 +12,6 @@ def download_txt(txt_url: str, book_path: str):
         file.write(response.text)
 
 
-@check_page_errors
 def download_img(img_url: str, image_path: str):
     """Функция для скачивания бинарных файлов.
     Args:
