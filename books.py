@@ -32,8 +32,7 @@ def get_txt_url(soup: BeautifulSoup) -> str:
     """
     if txt_link := soup.select_one('a[href^="/txt.php"]'):
         return txt_link['href']
-    else:
-        raise NoTxtFound
+    raise NoTxtFound
 
 
 def parse_book_page(response: Response, txt_path: str, image_path: str) -> Book:
