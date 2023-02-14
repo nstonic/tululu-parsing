@@ -16,7 +16,7 @@ class NoTxtFound(req_ex.HTTPError):
         return f'Отсутствует ссылка на текст книги'
 
 
-def check_response(func):
+def retry(func):
     """Декоратор повторяет запрос, если произошел разрыв соединения"""
 
     def wrapper(url):
@@ -47,7 +47,7 @@ def check_page_errors(func):
     return wrapper
 
 
-@check_response
+@retry
 def get_response(page_url: str) -> requests.Response:
     """Функция для получения ответа по get запросу.
     Args:
