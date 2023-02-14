@@ -1,14 +1,14 @@
 import os
 from urllib.parse import urljoin, urlparse, unquote
 
-import requests
+from requests import Response
 import requests.exceptions as req_ex
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
 from classes import Book
-from decorators import check_response
-from download import download_txt, download_img, raise_for_status_or_redirect
+from error_checking import get_response, check_page_errors, NoTxtFound
+from download import download_txt, download_img
 
 
 def get_image_file_name(url: str) -> str:
@@ -34,10 +34,10 @@ def get_txt_url(soup: BeautifulSoup) -> str:
     if txt_link := soup.select_one('a[href^="/txt.php"]'):
         return txt_link['href']
     else:
-        raise req_ex.HTTPError('Отсутствует ссылка на txt файл')
+        raise NoTxtFound
 
 
-def parse_book_page(response: requests.Response, txt_path: str, image_path: str) -> Book:
+def parse_book_page(response: Response, txt_path: str, image_path: str) -> Book:
     """Функция для парсинга страницы с описанием книги.
     Args:
         image_path (str): Папка для сохранения обложки книги
@@ -85,19 +85,6 @@ def parse_book_page(response: requests.Response, txt_path: str, image_path: str)
     return book
 
 
-@check_response
-def get_category_page(page_url: str) -> requests.Response:
-    """Функция для получения страницы категории.
-    Args:
-        page_url: url страницы
-    Returns:
-        Response
-    """
-    response = requests.get(page_url)
-    raise_for_status_or_redirect(response)
-    return response
-
-
 def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int) -> list[str]:
     """Функция для получения ссылок на книги по категории.
     Args:
@@ -109,14 +96,14 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
     """
     books_urls = []
     for page in range(start_page, end_page + 1):
-        response = get_category_page(urljoin(category_url, str(page)))
+        response = get_response(urljoin(category_url, str(page)))
         soup = BeautifulSoup(response.text, 'lxml')
         books_urls.extend(urljoin(response.url, link['href'])
                           for link in soup.select('.d_book div.bookimage a'))
     return books_urls
 
 
-@check_response
+@check_page_errors
 def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Book | None:
     """Функция для получения книги.
     Args:
@@ -127,8 +114,7 @@ def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Bo
     Returns:
         book: Объект класса Book.
     """
-    response = requests.get(book_url)
-    raise_for_status_or_redirect(response)
+    response = get_response(book_url)
     book = parse_book_page(
         response,
         txt_path=pathes.get('books'),
