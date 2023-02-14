@@ -2,7 +2,6 @@ import os
 from urllib.parse import urljoin, urlparse, unquote
 
 from requests import Response
-import requests.exceptions as req_ex
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
