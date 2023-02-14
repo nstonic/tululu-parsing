@@ -117,11 +117,13 @@ def get_book_urls_by_caterogy(category_url: str, start_page: int, end_page: int)
 
 
 @check_response
-def get_book(book_url: str, pathes: dict) -> Book | None:
+def get_book(book_url: str, pathes: dict, skip_txt: bool, skip_imgs: bool) -> Book | None:
     """Функция для получения книги.
     Args:
         pathes (dict): Пути к папкам
         book_url (str): Ссылка на страницу книги.
+        skip_txt (bool): Не скачивать книги
+        skip_imgs (bool): не скачивать обложки
     Returns:
         book: Объект класса Book.
     """
@@ -132,8 +134,8 @@ def get_book(book_url: str, pathes: dict) -> Book | None:
         txt_path=pathes.get('books'),
         image_path=pathes.get('images')
     )
-    if book.txt_url:
+    if not skip_txt:
         download_txt(txt_url=book.txt_url, book_path=book.book_path)
-    if book.img_url:
+    if not skip_imgs:
         download_img(img_url=book.img_url, image_path=book.image_path)
     return book
