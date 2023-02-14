@@ -3,20 +3,20 @@ import time
 from datetime import datetime
 
 import requests
-import requests.exceptions as req_ex
+from requests.exceptions import HTTPError, ConnectionError, ChunkedEncodingError
 
 
-class RedirectError(req_ex.HTTPError):
+class RedirectError(HTTPError):
     def __str__(self):
         return f'Страница отсутствует'
 
 
-class NoTxtFound(req_ex.HTTPError):
+class NoTxtFound(HTTPError):
     def __str__(self):
         return f'Отсутствует ссылка на текст книги'
 
 
-def retry(func):
+def retry_on_network_error(func):
     """Декоратор повторяет запрос, если произошел разрыв соединения"""
 
     def wrapper(url):
@@ -25,7 +25,7 @@ def retry(func):
             delay = min(delay, 30)
             try:
                 return func(url)
-            except (req_ex.ChunkedEncodingError, req_ex.ConnectionError) as ex:
+            except (ChunkedEncodingError, ConnectionError) as ex:
                 logging.error(f'{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}: {ex}')
                 time.sleep(delay)
                 delay += 5
@@ -47,7 +47,7 @@ def check_page_errors(func):
     return wrapper
 
 
-@retry
+@retry_on_network_error
 def get_response(page_url: str) -> requests.Response:
     """Функция для получения ответа по get запросу.
     Args:
