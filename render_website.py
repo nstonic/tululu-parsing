@@ -19,14 +19,18 @@ def render_page():
 
     with open('books.json') as file:
         books = json.load(file)
-
-    books_by_pages = chunked(books, 20)
-    for page_number, books in enumerate(books_by_pages):
+    books_on_page = 10
+    books_by_pages = list(chunked(books, books_on_page))
+    for index, books in enumerate(books_by_pages):
+        page_number = index + 1
+        number_of_columns = 2
         rendered_page = template.render(
-            books=chunked(books, 2)
+            books=chunked(books, number_of_columns),
+            total_pages=len(books_by_pages),
+            current_page=page_number
         )
         os.makedirs(ROOT_DIR, exist_ok=True)
-        page_path = os.path.join(ROOT_DIR, f'index{page_number + 1}.html')
+        page_path = os.path.join(ROOT_DIR, f'index{page_number}.html')
         with open(page_path, 'w', encoding="utf8") as file:
             file.write(rendered_page)
 
@@ -35,4 +39,4 @@ if __name__ == '__main__':
     render_page()
     server = Server()
     server.watch('template.html', render_page)
-    server.serve(root=ROOT_DIR)
+    server.serve()
