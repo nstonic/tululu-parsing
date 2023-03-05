@@ -23,7 +23,9 @@ def prepare_dests(dest_folder: str, json_path: str, skip_txt: bool, skip_imgs: b
         'log': os.path.join(dest_folder, f'{datetime.now().strftime("%Y-%m-%d %H.%M")}.log'),
         'json': json_path or os.path.join(dest_folder, 'books.json')
     }
-    os.makedirs(os.path.split(pathes['json'])[0], exist_ok=True)
+    json_path = os.path.split(pathes['json'])
+    if json_path[0]:
+        os.makedirs(json_path[0], exist_ok=True)
     if not skip_txt:
         pathes['books'] = os.path.join(dest_folder, 'books')
         os.makedirs(pathes['books'], exist_ok=True)
