@@ -1,4 +1,6 @@
+import os
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 
 @dataclass
@@ -14,6 +16,9 @@ class Book:
     image_path: str = None
 
     def to_dict(self):
+        if os.sep == '\\':
+            self.book_path = self.book_path.replace('\\', '/')
+            self.image_path = self.image_path.replace('\\', '/')
         return dict(
             title=self.title,
             genres=self.genres,
