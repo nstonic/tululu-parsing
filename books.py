@@ -70,7 +70,7 @@ def parse_book_page(response: Response, txt_path: str, image_path: str) -> Book:
         book.txt_url = urljoin(response.url, get_txt_url(soup))
         book.book_path = os.path.join(
             txt_path,
-            f'{book_id} {sanitized_title}.txt'
+            f'{book_id}.txt'
         )
 
     if image_path:
