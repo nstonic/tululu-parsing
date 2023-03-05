@@ -11,21 +11,31 @@
     <title>Hello, world!</title>
   </head>
   <body>
-    {% for book in books %}
-      <div class="card mb-3" style="max-width: 540px;">
-        <div class="row no-gutters">
-          <div class="col-md-4">
-            <img src="{{ book.image_path|urlencode }}" class="card-img" alt="обложка книги">
-          </div>
-          <div class="col-md-8">
-            <div class="card-body">
-              <h5 class="card-title">{{ book.title }}</h5>
-              <p class="card-text">{{ book.author }}</p>
-              <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+    <div class="container">
+      <div class="row">
+        {% for books_pair in books %}
+          {% for book in books_pair %}
+            <div class="col">
+              <div class="card mb-3" style="max-width: 540px;">
+                <div class="row no-gutters">
+                  <div class="col-md-4">
+                    <img src="{{ book.image_path|urlencode }}" class="card-img" alt="обложка книги">
+                  </div>
+                  <div class="col-md-8">
+                    <div class="card-body">
+                      <h5 class="card-title">{{ book.title }}</h5>
+                      <p class="card-text">{{ book.author }}</p>
+                      <p class="card-text"><a target="blank" href="{{ book.book_path }}">Читать</a></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          {% endfor %}
+          <div class="w-100"></div>
+        {% endfor %}
       </div>
-    {% endfor %}
+    </div>
+
   </body>
 </html>
