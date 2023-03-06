@@ -39,10 +39,11 @@ def check_page_errors(func):
     Первым аргументом у проверяемой функции должен быть url"""
 
     def wrapper(*args, **kwargs):
+        url, *_ = args
         try:
             return func(*args, **kwargs)
         except (RedirectError, NoTxtFound) as ex:
-            logging.warning(f'Книга по ссылке {args[0]} не найдена. Причина: {ex}')
+            logging.warning(f'Книга по ссылке {url} не найдена. Причина: {ex}')
 
     return wrapper
 
