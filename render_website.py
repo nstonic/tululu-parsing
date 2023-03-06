@@ -4,7 +4,7 @@ import os
 from livereload import Server
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from setuptools._vendor.more_itertools import chunked
+from more_itertools import chunked
 
 ROOT_DIR = 'pages'
 
