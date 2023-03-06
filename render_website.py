@@ -6,18 +6,18 @@ from livereload import Server
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from more_itertools import chunked
 
-ROOT_DIR = 'pages'
+ROOT_DIR = 'site/pages'
 
 
 def render_page():
     env = Environment(
-        loader=FileSystemLoader('.'),
+        loader=FileSystemLoader('site'),
         autoescape=select_autoescape(['html', 'xml'])
     )
 
     template = env.get_template('template.html')
 
-    with open('books.json') as file:
+    with open('site/books.json') as file:
         books = json.load(file)
     books_on_page = 10
     books_by_pages = list(chunked(books, books_on_page))
@@ -38,5 +38,5 @@ def render_page():
 if __name__ == '__main__':
     render_page()
     server = Server()
-    server.watch('template.html', render_page)
-    server.serve()
+    server.watch('site', render_page)
+    server.serve(root='site')
